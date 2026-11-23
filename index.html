@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>3D粒子生日手势互动</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
@@ -749,9 +749,182 @@
             }
 
         }
+        /* ---------- 移动端兼容增强 ---------- */
+        @supports (height: 100dvh) {
+            html,
+            body {
+                height: 100dvh;
+            }
+        }
+
+        html,
+        body {
+            overflow: hidden;
+            overscroll-behavior: none;
+        }
+
+        body {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #wechat-tip {
+            position: fixed;
+            top: max(10px, env(safe-area-inset-top));
+            left: 10px;
+            right: 10px;
+            z-index: 90;
+            display: none;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 11px 13px;
+            color: #fff6e7;
+            font-size: 13px;
+            line-height: 1.55;
+            text-align: left;
+            background: rgba(28, 20, 6, 0.94);
+            border: 1px solid rgba(255, 220, 120, 0.5);
+            border-radius: 12px;
+            box-shadow: 0 8px 26px rgba(0, 0, 0, 0.5);
+        }
+
+        #wechat-tip.is-visible {
+            display: flex;
+        }
+
+        body.wechat-tip-open #ui-layer {
+            top: calc(max(10px, env(safe-area-inset-top)) + 74px);
+        }
+
+        #wechat-tip b {
+            color: #ffd27a;
+        }
+
+        #wechat-tip .tip-close {
+            flex: none;
+            width: 26px;
+            height: 26px;
+            padding: 0;
+            border: 1px solid rgba(255, 227, 111, 0.45);
+            border-radius: 50%;
+            color: #ffd27a;
+            font-size: 16px;
+            line-height: 1;
+            background: transparent;
+        }
+
+        @media (max-width: 720px) {
+            #ui-layer {
+                top: max(10px, env(safe-area-inset-top));
+                width: calc(100vw - 20px);
+                padding: 10px 16px;
+                border-radius: 18px;
+            }
+
+            #status-main {
+                font-size: 16px;
+            }
+
+            #status-sub {
+                display: block;
+                margin-top: 3px;
+                font-size: 11px;
+            }
+
+            #photo-tools {
+                left: 10px;
+                right: 10px;
+                bottom: calc(max(10px, env(safe-area-inset-bottom)) + 56px);
+                gap: 8px;
+                transform: none;
+                overflow-x: auto;
+                overflow-y: hidden;
+                padding: 2px;
+                touch-action: pan-x;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+
+            #photo-tools::-webkit-scrollbar,
+            #global-tools::-webkit-scrollbar {
+                display: none;
+            }
+
+            #global-tools {
+                left: 10px;
+                right: auto;
+                width: calc(100vw - 20px);
+                max-width: calc(100vw - 20px);
+                box-sizing: border-box;
+                bottom: max(10px, env(safe-area-inset-bottom));
+                display: flex;
+                flex-wrap: nowrap;
+                justify-content: space-between;
+                gap: 6px;
+                overflow: hidden;
+                touch-action: manipulation;
+            }
+
+            #global-tools .tool-button {
+                flex: 1 1 0;
+                min-width: 0;
+                width: auto;
+                padding: 0 2px;
+                font-size: 13px;
+                white-space: nowrap;
+            }
+
+            #photo-manager-button,
+            #manager-add-photo-button,
+            #manager-import-button,
+            #manager-export-button,
+            #manager-close-button,
+            .tool-button {
+                flex: 0 0 auto;
+                min-height: 44px;
+                font-size: 14px;
+            }
+
+            #photo-manager-panel {
+                left: 10px;
+                right: 10px;
+                bottom: calc(max(10px, env(safe-area-inset-bottom)) + 112px);
+                width: auto;
+                max-height: 60vh;
+                transform: none;
+                overflow-y: auto;
+                touch-action: pan-y;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            @media (max-width: 340px) {
+                #global-tools .tool-button {
+                    font-size: 12px;
+                    padding: 0;
+                }
+            }
+
+            #photo-manager-grid {
+                max-height: none;
+            }
+
+            .manager-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            #poster-panel {
+                touch-action: pan-y;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
     </style>
 </head>
 <body>
+    <div id="wechat-tip">
+        <span>微信内无法调用摄像头手势，<b>点右上角 ··· → 在浏览器中打开</b>即可用手势；现在也可以直接点下方按钮体验。</span>
+        <button id="wechat-tip-close" class="tip-close" type="button" aria-label="关闭">×</button>
+    </div>
     <video id="webcam" autoplay playsinline muted></video>
     <canvas id="canvas"></canvas>
     <div id="hand-pointer"></div>
@@ -941,6 +1114,21 @@ I hope you are happy every day.</textarea>
             const CAMERA_DIST = 480;
             const WORLD_SCALE = 2.05;
             const MAX_DPR = 1.75;
+            const IS_WECHAT = /MicroMessenger/i.test(navigator.userAgent);
+            if (IS_WECHAT) {
+                const wechatTip = document.getElementById("wechat-tip");
+                const showTip = () => {
+                    wechatTip.classList.add("is-visible");
+                    document.body.classList.add("wechat-tip-open");
+                };
+                const hideTip = () => {
+                    wechatTip.classList.remove("is-visible");
+                    document.body.classList.remove("wechat-tip-open");
+                };
+                showTip();
+                document.getElementById("wechat-tip-close").addEventListener("click", hideTip);
+            }
+            setTimeout(() => loadingIndicator.classList.add("is-hidden"), 9000);
             const STORAGE_KEY = "particleBirthdayConfig.v4";
             const PHOTO_SHAPES = [
                 { id: "sphere", label: "照片球" },
@@ -2674,6 +2862,12 @@ I hope you are happy every day.</textarea>
             }
 
             async function startCameraTracking() {
+                if (IS_WECHAT) {
+                    loadingIndicator.classList.add("is-hidden");
+                    loadingIndicator.style.display = "none";
+                    setStatus("点击画面开始", "微信内不支持摄像头手势，点按钮即可体验");
+                    return;
+                }
                 if (!window.Hands || !window.Camera) {
                     loadingIndicator.classList.add("is-hidden");
                     setStatus("点击画面开始", "手势组件未加载，已切换为鼠标控制");
