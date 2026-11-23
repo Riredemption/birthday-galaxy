@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <title>3D粒子生日手势互动</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
@@ -766,6 +766,8 @@
         body {
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
         }
 
         #wechat-tip {
@@ -834,7 +836,8 @@
             #photo-tools {
                 left: 10px;
                 right: 10px;
-                bottom: calc(max(10px, env(safe-area-inset-bottom)) + 56px);
+                bottom: 66px;
+                bottom: calc(66px + var(--vv-gap, 0px));
                 gap: 8px;
                 transform: none;
                 overflow-x: auto;
@@ -856,7 +859,8 @@
                 width: calc(100vw - 20px);
                 max-width: calc(100vw - 20px);
                 box-sizing: border-box;
-                bottom: max(10px, env(safe-area-inset-bottom));
+                bottom: 10px;
+                bottom: calc(10px + var(--vv-gap, 0px));
                 display: flex;
                 flex-wrap: nowrap;
                 justify-content: space-between;
@@ -888,7 +892,8 @@
             #photo-manager-panel {
                 left: 10px;
                 right: 10px;
-                bottom: calc(max(10px, env(safe-area-inset-bottom)) + 112px);
+                bottom: 122px;
+                bottom: calc(122px + var(--vv-gap, 0px));
                 width: auto;
                 max-height: 60vh;
                 transform: none;
@@ -1129,6 +1134,17 @@ I hope you are happy every day.</textarea>
                 document.getElementById("wechat-tip-close").addEventListener("click", hideTip);
             }
             setTimeout(() => loadingIndicator.classList.add("is-hidden"), 9000);
+            const syncViewportGap = () => {
+                const vv = window.visualViewport;
+                const gap = vv ? Math.max(0, Math.round(window.innerHeight - vv.height - (vv.offsetTop || 0))) : 0;
+                document.documentElement.style.setProperty("--vv-gap", gap + "px");
+            };
+            syncViewportGap();
+            window.addEventListener("resize", syncViewportGap);
+            window.addEventListener("orientationchange", () => setTimeout(syncViewportGap, 120));
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener("resize", syncViewportGap);
+            }
             const STORAGE_KEY = "particleBirthdayConfig.v4";
             const PHOTO_SHAPES = [
                 { id: "sphere", label: "照片球" },
