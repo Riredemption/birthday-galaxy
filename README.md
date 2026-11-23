@@ -1,97 +1,105 @@
-# 3D 粒子生日手势互动
+# 3D Particle Birthday Card
 
-一个可以直接打开的单页前端作品：通过摄像头手势控制 3D 粒子、生日蛋糕、照片星球、照片形态切换、祝福弹幕和纪念海报生成。
+A single-page, no-build interactive birthday card. Hand gestures drive 3D particles, a birthday cake, a photo sphere, photo layout changes, blessing messages, and a poster generator.
 
-## 功能
+Live demo: <https://riredemption.github.io/birthday-galaxy/?v=2>
 
-- 3D 粒子倒计时、烟花、生日文字和生日蛋糕
-- 首次进入蛋糕阶段时，张开手掌吹灭蜡烛并自动进入照片星球
-- 照片星球支持多种形态：照片球、爱心、照片墙、时间轴
-- 时间轴形态会按照片时间自动滚动播放
-- 捏合手势抓取照片，靠近/远离控制照片缩放
-- 支持上传照片，并为每张照片编辑时间和文字
-- 支持设置重点照片、排序、删除、导入/导出配置
-- 支持自定义生日祝福和环绕祝福弹幕
-- 支持生成纪念海报，可选择模板、背景、风格和清晰度
-- 支持鼠标辅助操作和演示模式
+## Features
 
-## 使用方式
+- 3D particle countdown, fireworks, birthday text, and a particle cake
+- Open your palm on the first cake stage to blow out the candles and enter the photo sphere
+- Four photo sphere layouts: sphere, heart, wall, timeline
+- Timeline layout auto-plays photos in chronological order
+- Pinch to grab a photo, move your hand closer/farther to zoom
+- Upload photos and edit the date and caption of each one
+- Mark highlight photos, reorder, delete, import/export configuration
+- Custom greeting lines and orbiting blessing messages
+- Poster generator with selectable templates, backgrounds, styles, and resolution
+- Mouse/touch fallback and an automatic demo mode
 
-直接用浏览器打开 `index.html`。
+## Run Locally
 
-如果摄像头手势需要正常运行，建议通过本地服务器打开：
+Open `index.html` directly, or serve it locally (recommended for camera access):
 
 ```bash
 python -m http.server 8780
 ```
 
-然后访问：
+Then visit:
 
 ```text
 http://127.0.0.1:8780/index.html
 ```
 
-## 手势说明
+## Gestures
 
-- 张开手掌：开始流程；蛋糕首次出现时吹灭蜡烛；后续从蛋糕进入照片星球
-- 握拳：从照片星球返回 3D 蛋糕
-- 捏合：抓取照片
-- 比耶：切换照片形态
-- 靠近/远离手掌：抓取照片时放大或缩小
+| Gesture | Action |
+|---|---|
+| Open palm | Start the flow; blow out candles; enter the photo sphere |
+| Fist | Return from the photo sphere to the cake |
+| Pinch | Grab a photo |
+| Victory sign | Switch photo layout |
+| Move closer/farther | Zoom the grabbed photo |
 
-## 按钮说明
+Camera access requires HTTPS or `localhost`, and the browser must be allowed to use the camera.
 
-- 照片管理：上传照片，编辑每张照片的时间和文字，设置重点照片，排序或删除
-- 切换形态：手动切换照片形态
-- 保存海报：打开海报编辑器，选择模板、背景、风格后下载 PNG 海报
-- 演示：进入自动展示模式
-- 设置：编辑生日祝福、环绕祝福和音效开关
+## Buttons
 
-## 海报模板
+- **Photos**: upload photos, edit date/caption, set highlights, reorder, delete
+- **Layout**: manually switch photo layouts
+- **Poster**: open the poster editor, choose template/background/style, export PNG
+- **Demo**: run the automatic presentation flow
+- **Settings**: edit greeting lines, orbiting blessings, and sound effects
 
-海报编辑器目前支持：
+## Poster Templates
 
-- 星环宇宙
-- 爱心回忆
-- 时间胶片
-- 杂志封面
-- 星座连线
+- Star ring cosmos
+- Heart memories
+- Film timeline
+- Magazine cover
+- Constellation links
 
-背景支持：
+Backgrounds: built-in nebula, blurred photo, or custom upload.
 
-- 内置星云
-- 照片模糊背景
-- 自定义上传背景
+## Personalization
 
-## 浏览器要求
+All user-facing text, brand colors, and photos live in the page and are editable through the UI:
 
-建议使用最新版 Chrome、Edge 或其他 Chromium 内核浏览器。
+1. **Settings** — greeting lines (up to 12 characters each) and orbiting blessings
+2. **Photos** — upload images, then edit date, caption, highlight, and order
+3. **Poster** — title, template, background, style, then download
 
-项目使用了：
+Photos are stored in browser `localStorage`; use **Export/Import configuration** to move or back up a setup.
 
-- HTML Canvas
-- MediaPipe Hands
-- 摄像头权限
-- 本地文件上传
-- Canvas 海报导出
+## Photo Guidelines
 
-## 注意事项
+- Format: JPG, PNG, or WebP
+- Shape: portrait 3:4 works best (for example 1080x1440); square also works, landscape images get cropped
+- Size: about 2 MB per image or less, 6-12 images total for stable frame rates
+- To hard-code photos into the repository, place them in `photos/` as `01.jpg`, `02.jpg`, ... and update the default configuration
 
-- 需要联网加载 MediaPipe CDN。
-- 浏览器需要允许摄像头权限，手势识别才会生效。
-- 如果使用外链默认图片，浏览器跨域限制可能导致海报中用占位视觉替代；上传的本地照片可以正常进入海报。
-- 上传照片和配置会保存在当前浏览器本地存储中，可以通过“导出配置”备份。
+## Compatibility Notes
 
-## GitHub Pages
+- Best on current Chrome, Edge, or other Chromium-based browsers
+- WeChat's in-app browser blocks camera access: the page shows a notice and falls back to buttons
+- iOS Safari supports the buttons and touch flow; gesture tracking support varies
+- On mobile, rendering DPR is capped, the hand model switches to the lite variant, and inference is throttled; if frame time stays high, resolution drops one more step automatically
+- MediaPipe assets are loaded from a CDN, so an internet connection is required for gestures
 
-上传到 GitHub 后，可以通过 GitHub Pages 发布：
+## Tech
 
-1. 进入仓库 `Settings`
-2. 打开 `Pages`
-3. Source 选择 `Deploy from a branch`
-4. Branch 选择 `main`
-5. 目录选择 `/root`
-6. 保存后等待生成访问链接
+- HTML Canvas 2D rendering
+- MediaPipe Hands for gesture tracking
+- Web Audio for sound effects
+- Canvas-based poster export
+
+## Deploy with GitHub Pages
+
+1. Push this repository to GitHub
+2. Open `Settings` → `Pages`
+3. Source: `Deploy from a branch`
+4. Branch: `main`, folder: `/ (root)`
+5. Save and wait for the site URL
 
 ## License
 
