@@ -816,6 +816,13 @@
         }
 
         @media (max-width: 720px) {
+            * {
+                -webkit-backdrop-filter: none !important;
+                backdrop-filter: none !important;
+            }
+        }
+
+        @media (max-width: 720px) {
             #ui-layer {
                 top: max(10px, env(safe-area-inset-top));
                 width: calc(100vw - 20px);
@@ -1118,7 +1125,10 @@ I hope you are happy every day.</textarea>
             const FOV = 360;
             const CAMERA_DIST = 480;
             const WORLD_SCALE = 2.05;
-            const MAX_DPR = 1.75;
+            const IS_MOBILE_DEVICE = window.matchMedia("(pointer: coarse)").matches || /Android|iPhone|iPad|iPod|HarmonyOS|Mobile/i.test(navigator.userAgent);
+            const MAX_DPR = IS_MOBILE_DEVICE ? 1.25 : 1.75;
+            let dprCap = MAX_DPR;
+            let lowResApplied = false;
             const IS_WECHAT = /MicroMessenger/i.test(navigator.userAgent);
             if (IS_WECHAT) {
                 const wechatTip = document.getElementById("wechat-tip");
@@ -2149,7 +2159,7 @@ I hope you are happy every day.</textarea>
             function resize() {
                 viewW = window.innerWidth || 1;
                 viewH = window.innerHeight || 1;
-                dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+                dpr = Math.min(window.devicePixelRatio || 1, dprCap);
 
                 canvas.width = Math.round(viewW * dpr);
                 canvas.height = Math.round(viewH * dpr);
@@ -2897,7 +2907,7 @@ I hope you are happy every day.</textarea>
 
                     hands.setOptions({
                         maxNumHands: 1,
-                        modelComplexity: 1,
+                        modelComplexity: IS_MOBILE_DEVICE ? 0 : 1,
                         minDetectionConfidence: 0.68,
                         minTrackingConfidence: 0.68
                     });
@@ -2908,7 +2918,8 @@ I hope you are happy every day.</textarea>
                         onFrame: async () => {
                             if (frameBusy) return;
                             const now = performance.now();
-                            const minInterval = qualityScale < 0.75 ? 95 : qualityScale < 0.9 ? 68 : 46;
+                            const baseInterval = qualityScale < 0.75 ? 95 : qualityScale < 0.9 ? 68 : 46;
+                            const minInterval = IS_MOBILE_DEVICE ? Math.max(80, baseInterval) : baseInterval;
                             if (now - lastGestureSentAt < minInterval) return;
                             lastGestureSentAt = now;
                             frameBusy = true;
@@ -3328,6 +3339,11 @@ I hope you are happy every day.</textarea>
                     avgFrameMs += (delta - avgFrameMs) * 0.035;
                     const targetQuality = avgFrameMs > 26 ? 0.68 : avgFrameMs > 21 ? 0.82 : 1;
                     qualityScale += (targetQuality - qualityScale) * 0.02;
+                    if (!lowResApplied && now > 5000 && avgFrameMs > 38 && dprCap > 1) {
+                        lowResApplied = true;
+                        dprCap = 1;
+                        resize();
+                    }
                 }
                 lastFrameAt = now;
                 drawBackground();
