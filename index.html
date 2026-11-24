@@ -1017,9 +1017,9 @@ let H = window.innerHeight;
 let DPR = 1;
 
 function resizeCanvas() {
-  DPR = Math.min(window.devicePixelRatio || 1, 2);
   W = window.innerWidth;
   H = window.innerHeight;
+  DPR = Math.min(window.devicePixelRatio || 1, W < 640 ? 3 : 2);
 
   [starsCv, fxCv].forEach(cv => {
     cv.width = Math.round(W * DPR);
@@ -1138,17 +1138,21 @@ function spawnName(text) {
   }
 
   c.fillStyle = '#ffffff';
+  c.strokeStyle = '#ffffff';
+  c.lineWidth = Math.max(1, fontSize * 0.014);
   c.textAlign = 'center';
   c.textBaseline = 'middle';
+  c.strokeText(text, W / 2, H * 0.44);
   c.fillText(text, W / 2, H * 0.44);
 
   const data = c.getImageData(0, 0, off.width, off.height).data;
-  const step = W < 640 ? 5 : 4;
+  const dense = W < 640;
+  const step = dense ? 2 : 4;
   const targets = [];
 
   for (let y = 0; y < H; y += step) {
     for (let x = 0; x < W; x += step) {
-      if (data[(y * W + x) * 4 + 3] > 128) targets.push([x, y]);
+      if (data[(y * W + x) * 4 + 3] > 110) targets.push([x, y]);
     }
   }
 
@@ -1159,7 +1163,7 @@ function spawnName(text) {
     targets[j] = tmp;
   }
 
-  const max = prefersReduced ? 420 : (W < 640 ? 720 : 1000);
+  const max = prefersReduced ? 420 : (dense ? 2000 : 1000);
   const points = targets.slice(0, max);
 
   points.forEach(([tx, ty]) => {
@@ -1172,7 +1176,7 @@ function spawnName(text) {
       ty,
       delay: rand(0, 380),
       dur: rand(1000, 1800),
-      size: rand(0.7, 1.9),
+      size: dense ? rand(0.95, 2.0) : rand(0.7, 1.9),
       seed: rand(0, 1000)
     });
   });
@@ -1192,7 +1196,11 @@ function drawName(now) {
     }
   }
 
-  fctx.globalCompositeOperation = 'lighter';
+  const halo = W >= 640;
+  fctx.globalCompositeOperation = halo ? 'lighter' : 'source-over';
+
+  const cores = new Map();
+  const halos = new Map();
 
   for (const p of nameParticles) {
     const local = clamp((now - nameStart - p.delay) / p.dur, 0, 1);
@@ -1206,19 +1214,42 @@ function drawName(now) {
       y = p.ty + Math.cos(now * 0.0009 + p.seed) * 1.2;
     }
 
-    const alpha = fade * (0.25 + 0.75 * e);
+    const key = Math.round(fade * (0.25 + 0.75 * e) * 10);
 
-    fctx.beginPath();
-    fctx.fillStyle = 'rgba(255,217,160,' + (alpha * 0.16) + ')';
-    fctx.arc(x, y, p.size * 3.2, 0, Math.PI * 2);
-    fctx.fill();
+    if (!cores.has(key)) cores.set(key, []);
+    cores.get(key).push(x, y, p.size);
 
-    fctx.beginPath();
-    fctx.fillStyle = 'rgba(255,236,205,' + alpha + ')';
-    fctx.arc(x, y, p.size, 0, Math.PI * 2);
-    fctx.fill();
+    if (halo) {
+      if (!halos.has(key)) halos.set(key, []);
+      halos.get(key).push(x, y, p.size * 3.2);
+    }
   }
 
+  if (halo) {
+    fctx.fillStyle = '#ffd9a0';
+    halos.forEach((arr, k) => {
+      fctx.globalAlpha = (k / 10) * 0.16;
+      fctx.beginPath();
+      for (let i = 0; i < arr.length; i += 3) {
+        fctx.moveTo(arr[i] + arr[i + 2], arr[i + 1]);
+        fctx.arc(arr[i], arr[i + 1], arr[i + 2], 0, Math.PI * 2);
+      }
+      fctx.fill();
+    });
+  }
+
+  fctx.fillStyle = '#ffeccd';
+  cores.forEach((arr, k) => {
+    fctx.globalAlpha = Math.min(1, k / 10);
+    fctx.beginPath();
+    for (let i = 0; i < arr.length; i += 3) {
+      fctx.moveTo(arr[i] + arr[i + 2], arr[i + 1]);
+      fctx.arc(arr[i], arr[i + 1], arr[i + 2], 0, Math.PI * 2);
+    }
+    fctx.fill();
+  });
+
+  fctx.globalAlpha = 1;
   fctx.globalCompositeOperation = 'source-over';
 }
 
